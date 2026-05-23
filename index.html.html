@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOC-AI UTI Diagnoser By Mahi & Shreya | India Clinical Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #e8f5e9; }
+        .results-table th, .results-table td { border-bottom: 1px solid #e2e8f0; }
+        .results-table tr:last-child td { border-bottom: none; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 text-gray-800">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        <header class="flex items-center justify-between bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-microscope text-blue-600 text-3xl"></i>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">VOC-AI UTI Diagnoser</h1>
+                    <p class="text-xs text-gray-500 font-medium">By Mahi & Shreya | Jaypee Institute of Information Technology</p>
+                </div>
+            </div>
+            <div class="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-semibold border border-blue-100">
+                India Edition v3.2
+            </div>
+        </header>
+
+        <!-- INPUT SECTION -->
+        <section id="input-section" class="bg-white rounded-xl shadow-md p-6 md:p-8 border border-gray-100">
+            <form id="diagnosis-form" class="space-y-6">
+                
+                <!-- PATIENT DEMOGRAPHICS (Age & Gender) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50 p-5 rounded-xl border border-blue-100">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2"><i class="fas fa-user-clock mr-2 text-blue-500"></i>Patient Age</label>
+                        <input type="number" id="patient-age" required min="1" max="120" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="e.g. 45">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2"><i class="fas fa-venus-mars mr-2 text-blue-500"></i>Gender</label>
+                        <select id="patient-gender" required class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition">
+                            <option value="">Select gender...</option>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- INPUT METHOD TOGGLE -->
+                <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                    <label class="block text-sm font-bold text-gray-700 mb-4 tracking-wide uppercase">Diagnostic Input Method</label>
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-8">
+                        <label class="flex items-center cursor-pointer bg-white px-4 py-2 rounded-lg border hover:bg-gray-50 transition w-full sm:w-auto">
+                            <input type="radio" name="input_method" value="csv" class="w-5 h-5 text-blue-600 mr-3">
+                            <span class="text-gray-800 font-semibold"><i class="fas fa-file-csv text-green-600 mr-2"></i> Upload GC-MS CSV</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer bg-white px-4 py-2 rounded-lg border hover:bg-gray-50 transition w-full sm:w-auto">
+                            <input type="radio" name="input_method" value="manual" checked class="w-5 h-5 text-blue-600 mr-3">
+                            <span class="text-gray-800 font-semibold"><i class="fas fa-keyboard text-purple-600 mr-2"></i> Manual Entry</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- CSV UPLOAD -->
+                <div id="csv-upload-area" class="hidden p-4 border border-dashed border-gray-300 rounded-xl bg-gray-50 text-center">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-blue-300 mb-3"></i>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Upload Chromatogram CSV</label>
+                    <input type="file" id="csv-file" accept=".csv" class="block w-full text-sm text-gray-500 mx-auto max-w-sm">
+                </div>
+
+                <!-- MANUAL ENTRY -->
+                <div id="manual-entry-area" class="block bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                    <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+                        <label class="block text-sm font-bold text-gray-700">Enter VOC Intensities (0.00 to 1.00 scale)</label>
+                        <span class="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-bold">16 Core Panel</span>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3" id="manual-inputs-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-4 border-t border-gray-100">
+                    <button type="button" onclick="runAnalysis()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-10 rounded-xl shadow-lg transition duration-200 flex items-center">
+                        <i class="fas fa-brain mr-2 text-xl"></i> ANALYZE PATIENT
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- RESULTS SECTION -->
+        <section id="results-section" class="hidden space-y-6">
+            
+            <div id="diagnosis-banner" class="bg-[#2ecc71] rounded-xl shadow-lg p-6 text-center text-white relative overflow-hidden border border-[#27ae60]">
+                <div class="absolute top-1/2 right-4 transform -translate-y-1/2 opacity-20"><i id="banner-icon" class="fas fa-bacteria text-8xl"></i></div>
+                <h2 class="text-3xl font-extrabold mb-2 flex items-center justify-center relative z-10 drop-shadow-md">
+                    <span id="res-pathogen" class="underline decoration-white/50 underline-offset-4">Pseudomonas_UTI</span>
+                </h2>
+                
+                <div class="relative z-10 mt-3 flex flex-col items-center justify-center space-y-2">
+                    <p id="confidence-text" class="text-xl font-bold text-green-50">
+                        AI Confidence: <span id="res-confidence" class="bg-white/20 px-3 py-1 rounded text-white ml-2">90%</span>
+                    </p>
+                    <p id="risk-modifier-display" class="text-sm font-medium bg-black/10 px-3 py-1 rounded-full">
+                        <i class="fas fa-info-circle mr-1"></i> Clinical Risk Factors Applied: <span id="res-risk-tags" class="font-bold">None</span>
+                    </p>
+                </div>
+            </div>
+
+            <div id="details-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Left Card: Biomarkers -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                    <div class="p-4 border-b border-gray-100 bg-white flex items-center">
+                        <i class="fas fa-flask text-blue-600 mr-3"></i>
+                        <h3 class="font-bold text-gray-800 text-lg">Top 5 VOC Biomarkers</h3>
+                    </div>
+                    <table class="w-full text-left results-table">
+                        <thead>
+                            <tr class="bg-[#3498db] text-white">
+                                <th class="p-3 font-semibold text-sm">Rank</th>
+                                <th class="p-3 font-semibold text-sm">Biomarker</th>
+                                <th class="p-3 font-semibold text-sm">Value</th>
+                                <th class="p-3 font-semibold text-sm">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="biomarker-table-body" class="text-sm"></tbody>
+                    </table>
+                </div>
+
+                <!-- Right Card: Treatment -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="p-4 border-b border-gray-100 bg-white flex items-center">
+                            <i class="fas fa-capsules text-red-500 mr-3"></i>
+                            <h3 class="font-bold text-gray-800 text-lg">Treatment (India Data)</h3>
+                        </div>
+                        <table class="w-full text-left results-table">
+                            <thead>
+                                <tr class="bg-[#3498db] text-white">
+                                    <th class="p-3 font-semibold text-sm">Pathogen</th>
+                                    <th class="p-3 font-semibold text-sm">✅ SAFE Antibiotic</th>
+                                    <th class="p-3 font-semibold text-sm">❌ High Resistance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="treatment-table-body" class="text-sm"></tbody>
+                        </table>
+                    </div>
+                    <div class="p-4 bg-gray-50 border-t border-gray-200 text-sm text-gray-600 font-medium text-center">
+                        <i class="far fa-clock text-blue-500 mr-2"></i> Total turnaround: 35min | India Data [PMC8941965]
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-center mt-6 pb-4">
+                <button onclick="location.reload()" class="bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-bold py-3 px-8 rounded-xl shadow-sm">
+                    <i class="fas fa-redo-alt mr-2"></i> Analyze Another Patient
+                </button>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        const VOC_NAMES = [
+            "Acetic acid", "2-Heptanone", "2-Nonanone", "2-Undecanone", 
+            "2-Tridecanone", "2-Pentanone", "3-Methyl-butanol", "3-Methyl-butyric acid", 
+            "3-Methyl-indole", "4-Methyl-butanoic acid", "5-Methyl-undecane", "Dimethyl trisulfide", 
+            "Ethanol", "Indole", "Tetramethyl butane", "Trimethylamine"
+        ];
+
+        // Windows for CSV Peak Extraction
+        const VOC_WINDOWS = {
+            "Acetic acid": [3.5, 4.5], "2-Heptanone": [12.0, 13.0], "2-Nonanone": [18.0, 19.0], "2-Undecanone": [24.0, 25.0],
+            "2-Tridecanone": [30.0, 31.0], "2-Pentanone": [7.0, 8.0], "3-Methyl-butanol": [5.0, 6.0], "3-Methyl-butyric acid": [6.5, 7.5],
+            "3-Methyl-indole": [33.0, 34.0], "4-Methyl-butanoic acid": [8.0, 9.0], "5-Methyl-undecane": [22.0, 23.0], 
+            "Dimethyl trisulfide": [10.0, 11.0], "Ethanol": [2.0, 3.0], "Indole": [26.0, 27.0], "Tetramethyl butane": [14.0, 15.0], "Trimethylamine": [1.5, 2.5]
+        };
+
+        // India Resistance AI Logic Database (0.0 to 1.0 scale weights)
+        const PATHOGEN_DB = {
+            "E_coli": { weights: {"Acetic acid": 0.8, "Indole": 0.9, "Ethanol": 0.5}, label: "E. coli", safe: "Nitrofurantoin, Fosfomycin", avoid: "Ciprofloxacin (85%)" },
+            "Pseudomonas": { weights: {"Acetic acid": 0.5, "2-Heptanone": 0.9, "2-Nonanone": 0.9, "2-Undecanone": 0.8}, label: "Pseudomonas", safe: "Ceftazidime", avoid: "Ciprofloxacin (60%)" },
+            "Proteus": { weights: {"Acetic acid": 0.6, "Dimethyl trisulfide": 0.9, "2-Undecanone": 0.7}, label: "Proteus", safe: "Ceftriaxone", avoid: "Nitrofurantoin" },
+            "Klebsiella": { weights: {"Acetic acid": 0.7, "3-Methyl-butanol": 0.9, "Ethanol": 0.6}, label: "Klebsiella", safe: "Ceftriaxone, Piperacillin", avoid: "Ampicillin" },
+            "Enterococcus": { weights: {"Acetic acid": 0.9, "3-Methyl-butyric acid": 0.9, "2-Pentanone": 0.7}, label: "Enterococcus", safe: "Ampicillin", avoid: "Cephalosporins" }
+        };
+
+        // Populate manual entry inputs dynamically
+        const manualGrid = document.getElementById('manual-inputs-grid');
+        VOC_NAMES.forEach(voc => {
+            manualGrid.innerHTML += `<div><label class="text-xs font-semibold text-gray-600">${voc}</label>
+                <input type="number" id="voc_${voc}" step="0.01" min="0" max="1" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value="0.00"></div>`;
+        });
+
+        // Toggle UI logic
+        document.querySelectorAll('input[name="input_method"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                document.getElementById('csv-upload-area').style.display = e.target.value === 'csv' ? 'block' : 'none';
+                document.getElementById('manual-entry-area').style.display = e.target.value === 'manual' ? 'block' : 'none';
+            });
+        });
+
+        // CSV Parsing Logic
+        function parseCSV(csvText) {
+            let lines = csvText.split('\n');
+            let vocValues = {};
+            VOC_NAMES.forEach(v => vocValues[v] = 0.0);
+
+            for(let i=1; i<lines.length; i++) {
+                if(!lines[i].trim()) continue;
+                let parts = lines[i].split(',');
+                // Assuming standard format where column 0 is Time and column 1 is Intensity
+                let time = parseFloat(parts[0]);
+                let intensity = parseFloat(parts[1]);
+                
+                if(!isNaN(time) && !isNaN(intensity)) {
+                    for(let v in VOC_WINDOWS) {
+                        if(time >= VOC_WINDOWS[v][0] && time <= VOC_WINDOWS[v][1]) {
+                            // Take the maximum intensity found within the retention window
+                            if(intensity > vocValues[v]) vocValues[v] = intensity;
+                        }
+                    }
+                }
+            }
+            return vocValues;
+        }
+
+        // Main Analysis Trigger
+        function runAnalysis() {
+            // Check demographics
+            let ageInput = document.getElementById('patient-age').value;
+            let gender = document.getElementById('patient-gender').value;
+            
+            if (!ageInput || !gender) {
+                alert("Please fill in the Patient Age and Gender before analyzing.");
+                return;
+            }
+
+            let age = parseInt(ageInput);
+            const isManual = document.querySelector('input[name="input_method"]:checked').value === 'manual';
+
+            if (isManual) {
+                let vocValues = {};
+                let totalLoad = 0;
+                
+                VOC_NAMES.forEach(v => {
+                    let val = parseFloat(document.getElementById(`voc_${v}`).value) || 0.0;
+                    vocValues[v] = val;
+                    totalLoad += val;
+                });
+
+                if(totalLoad === 0) {
+                    alert("Please enter VOC values greater than 0.00 to detect an infection!");
+                    return;
+                }
+                
+                processDiagnosis(vocValues, age, gender);
+
+            } else {
+                // Handle CSV Upload
+                const fileInput = document.getElementById('csv-file');
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    alert("Please upload a Chromatogram CSV file first!");
+                    return;
+                }
+
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    let vocValues = parseCSV(e.target.result);
+                    
+                    let totalLoad = 0;
+                    for(let key in vocValues) totalLoad += vocValues[key];
+
+                    if(totalLoad === 0) {
+                        alert("No VOC peaks detected in the specified retention windows from your CSV file.");
+                        return;
+                    }
+
+                    processDiagnosis(vocValues, age, gender);
+                };
+                
+                reader.readAsText(file);
+            }
+        }
+
+        function processDiagnosis(vocValues, age, gender) {
+            let totalLoad = 0;
+            for(let key in vocValues) totalLoad += vocValues[key];
+
+            // --- AI LOGIC: UTI VS NON-UTI ---
+            let aceticAcid = vocValues["Acetic acid"] || 0.0;
+            
+            // If the sum of all VOCs is very low (< 1.5) AND acetic acid is low, it's Healthy
+            if(totalLoad < 1.5 && aceticAcid < 0.2) {
+                renderHealthy();
+                return;
+            }
+
+            // --- AI LOGIC: PATHOGEN DETECTION (Dot Product) ---
+            let maxScore = -1;
+            let bestPathogen = "Unknown";
+
+            for(let p in PATHOGEN_DB) {
+                let score = 0;
+                let weights = PATHOGEN_DB[p].weights;
+                for(let v in weights) {
+                    score += (vocValues[v] || 0) * weights[v];
+                }
+                if(score > maxScore) {
+                    maxScore = score;
+                    bestPathogen = p;
+                }
+            }
+
+            // --- CLINICAL RISK MODIFIER (Age & Gender) ---
+            let riskBoost = 0;
+            let riskTags = [];
+
+            if (gender === 'F') {
+                riskBoost += 5; // Women have higher baseline risk
+                riskTags.push("Female Base Risk");
+            }
+            if (age >= 60) {
+                riskBoost += 6; // Seniors have higher baseline risk
+                riskTags.push("Senior Age (60+)");
+            }
+
+            // Calculate Dynamic Confidence Percentage
+            // Math: Base 70% + Dot-Product Score + Demographic Risk Factors. Capped at 99%.
+            let confidence = Math.min(99, Math.floor(70 + (maxScore * 10) + riskBoost));
+
+            renderInfection(vocValues, bestPathogen, confidence, riskTags);
+        }
+
+        function renderHealthy() {
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('results-section').style.display = 'block';
+            
+            const banner = document.getElementById('diagnosis-banner');
+            banner.className = "bg-gray-400 rounded-xl shadow-lg p-6 text-center text-white relative overflow-hidden";
+            document.getElementById('banner-icon').className = "fas fa-shield-virus text-8xl";
+            document.getElementById('res-pathogen').innerText = "HEALTHY / NO UTI DETECTED";
+            document.getElementById('res-pathogen').classList.remove('underline');
+            document.getElementById('confidence-text').style.display = 'none';
+            document.getElementById('risk-modifier-display').style.display = 'none';
+            document.getElementById('details-cards').style.display = 'none';
+        }
+
+        function renderInfection(vocValues, bestPathogen, confidence, riskTags) {
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('results-section').style.display = 'block';
+
+            let treatment = PATHOGEN_DB[bestPathogen] || PATHOGEN_DB["E_coli"]; // fallback
+
+            document.getElementById('res-pathogen').innerText = treatment.label + " UTI";
+            document.getElementById('res-confidence').innerText = confidence + "%";
+            document.getElementById('confidence-text').style.display = 'block';
+            document.getElementById('details-cards').style.display = 'grid';
+            
+            // Display Risk Modifiers Applied
+            const riskDisplay = document.getElementById('risk-modifier-display');
+            if (riskTags.length > 0) {
+                riskDisplay.style.display = 'inline-block';
+                document.getElementById('res-risk-tags').innerText = riskTags.join(', ');
+            } else {
+                riskDisplay.style.display = 'inline-block';
+                document.getElementById('res-risk-tags').innerText = "Standard Profile";
+            }
+            
+            // Top 5 Biomarkers
+            const topVocs = Object.entries(vocValues).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const biomarkerBody = document.getElementById('biomarker-table-body');
+            biomarkerBody.innerHTML = '';
+            
+            topVocs.forEach((voc, i) => {
+                const isHigh = voc[1] > 0.4;
+                const status = isHigh ? 'HIGH (Pathogenic)' : 'Normal';
+                const color = isHigh ? 'text-[#27ae60]' : 'text-blue-500';
+                biomarkerBody.innerHTML += `
+                    <tr class="hover:bg-gray-50 border-b">
+                        <td class="p-3 text-center font-bold text-gray-500">${i+1}</td>
+                        <td class="p-3 text-gray-800 font-semibold">${voc[0]}</td>
+                        <td class="p-3 text-gray-600 font-mono">${voc[1].toFixed(2)}</td>
+                        <td class="p-3 font-bold ${color}">${status}</td>
+                    </tr>
+                `;
+            });
+
+            // Treatment Table
+            document.getElementById('treatment-table-body').innerHTML = `
+                <tr class="bg-[#f0fdf4]">
+                    <td class="p-4 font-bold text-gray-800 text-lg">${treatment.label}</td>
+                    <td class="p-4 font-bold text-[#27ae60]">${treatment.safe}</td>
+                    <td class="p-4 text-red-600 font-medium bg-red-50">${treatment.avoid}</td>
+                </tr>
+            `;
+        }
+    </script>
+</body>
+</html>
